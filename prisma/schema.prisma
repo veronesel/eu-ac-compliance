@@ -1,0 +1,321 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  role         String
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  incidents_as_investigator Incident[]     @relation("Investigator")
+  incidents_as_subject      Incident[]     @relation("Subject")
+  gifts_submitted           Gift[]         @relation("GiftSubmitter")
+  gifts_managed             Gift[]         @relation("GiftManager")
+  coi_declarations          COI[]
+  wr_cases                  WRCase[]
+  audit_entries             AuditLog[]
+  notifications             Notification[]
+}
+
+model Obligation {
+  id             String   @id @default(cuid())
+  articleRef     String
+  title          String
+  obligationType String
+  classification String
+  deadline       String
+  status         String   @default("NOT_STARTED")
+  probability    Int      @default(2)
+  impact         Int      @default(3)
+  policies       String   @default("[]")
+  controls       String   @default("[]")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Risk {
+  id                 String   @id @default(cuid())
+  category           String
+  title              String
+  description        String
+  likelihood         Int
+  impact             Int
+  inherentScore      Int
+  currentControls    String
+  residualLikelihood Int      @default(2)
+  residualImpact     Int      @default(2)
+  residualScore      Int      @default(4)
+  owner              String
+  reviewDate         DateTime
+  status             String   @default("ACTIVE")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  incidents Incident[]
+}
+
+model Incident {
+  id                     String    @id @default(cuid())
+  reference              String    @unique
+  title                  String
+  allegationType         String
+  severity               String
+  status                 String    @default("DRAFT")
+  description            String
+  discoveryDate          DateTime?
+  reportedDate           DateTime  @default(now())
+  investigatorId         String?
+  subjectId              String?
+  amlFlag                Boolean   @default(false)
+  publicOfficialFlag     Boolean   @default(false)
+  estimatedLoss          Float?
+  worldwideTurnover      Float?
+  riskId                 String?
+  triageDate             DateTime?
+  investigationStartDate DateTime?
+  findingsDate           DateTime?
+  closedDate             DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  investigator User?                 @relation("Investigator", fields: [investigatorId], references: [id])
+  subject      User?                 @relation("Subject", fields: [subjectId], references: [id])
+  risk         Risk?                 @relation(fields: [riskId], references: [id])
+  findings     IncidentFinding[]
+  disclosure   IncidentDisclosure?
+  remediations IncidentRemediation[]
+  notifications Notification[]
+  auditLog     AuditLog[]
+}
+
+model IncidentFinding {
+  id             String   @id @default(cuid())
+  incidentId     String
+  summary        String
+  evidenceRefs   String   @default("[]")
+  recommendation String
+  findingDate    DateTime @default(now())
+  author         String
+
+  incident Incident @relation(fields: [incidentId], references: [id])
+}
+
+model IncidentDisclosure {
+  id              String    @id @default(cuid())
+  incidentId      String    @unique
+  legalReviewDone Boolean   @default(false)
+  legalReviewDate DateTime?
+  ccoDecision     String?
+  decisionDate    DateTime?
+  disclosureDate  DateTime?
+  rapidityClass   String?
+  notes           String?
+  createdAt       DateTime  @default(now())
+
+  incident Incident @relation(fields: [incidentId], references: [id])
+}
+
+model IncidentRemediation {
+  id            String    @id @default(cuid())
+  incidentId    String
+  action        String
+  owner         String
+  dueDate       DateTime
+  completedDate DateTime?
+  status        String    @default("OPEN")
+
+  incident Incident @relation(fields: [incidentId], references: [id])
+}
+
+model Gift {
+  id               String    @id @default(cuid())
+  reference        String    @unique
+  description      String
+  occasion         String
+  provider         String
+  counterpartyType String
+  amlFlag          Boolean   @default(false)
+  eventDate        DateTime
+  estimatedValue   Float
+  attendees        String
+  submitterId      String
+  managerId        String?
+  status           String    @default("PENDING_MANAGER")
+  managerDecision  String?
+  managerNotes     String?
+  managerDate      DateTime?
+  coDecision       String?
+  coNotes          String?
+  coDate           DateTime?
+  autoApproved     Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  submitter User    @relation("GiftSubmitter", fields: [submitterId], references: [id])
+  manager   User?   @relation("GiftManager", fields: [managerId], references: [id])
+  auditLog  AuditLog[]
+}
+
+model COI {
+  id                 String    @id @default(cuid())
+  reference          String    @unique
+  declarerId         String
+  interestType       String
+  description        String
+  counterparty       String
+  estimatedValue     Float?
+  status             String    @default("DRAFT")
+  coAssessment       String?
+  coAssessmentDate   DateTime?
+  managementDecision String?
+  managementDate     DateTime?
+  remediationPlan    String?
+  nextReviewDate     DateTime?
+  annualRenewals     Int       @default(0)
+  lastRenewalDate    DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  declarer User      @relation(fields: [declarerId], references: [id])
+  auditLog AuditLog[]
+}
+
+model WRCase {
+  id                String    @id @default(cuid())
+  reference         String    @unique
+  reporterUserId    String?
+  reporterName      String?
+  reporterContact   String?
+  allegation        String
+  category          String
+  detailsRestricted String
+  detailsPublic     String
+  status            String    @default("RECEIVED")
+  investigatorId    String?
+  acknowledgedDate  DateTime?
+  feedbackDate      DateTime?
+  linkedIncidentId  String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  reporter User? @relation(fields: [reporterUserId], references: [id])
+}
+
+model ThirdParty {
+  id           String    @id @default(cuid())
+  name         String
+  type         String
+  jurisdiction String
+  riskTier     String?
+  riskScore    Float?
+  ddqStatus    String    @default("NOT_STARTED")
+  lastDDQDate  DateTime?
+  nextDDQDate  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  ddqQuestionnaires DDQ[]
+}
+
+model DDQ {
+  id                  String    @id @default(cuid())
+  reference           String    @unique
+  thirdPartyId        String
+  sentDate            DateTime?
+  responseDate        DateTime?
+  responses           String    @default("{}")
+  rawScore            Float?
+  riskTier            String?
+  status              String    @default("DRAFT")
+  enhancedDDQRequired Boolean   @default(false)
+  reviewNotes         String?
+  reviewDate          DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  thirdParty ThirdParty @relation(fields: [thirdPartyId], references: [id])
+}
+
+model Control {
+  id              String    @id @default(cuid())
+  reference       String    @unique
+  title           String
+  description     String
+  controlType     String
+  owner           String
+  tester          String?
+  status          String    @default("ASSIGNED")
+  assignedDate    DateTime  @default(now())
+  testStartDate   DateTime?
+  testEndDate     DateTime?
+  evidenceRefs    String    @default("[]")
+  testResult      String?
+  reviewNotes     String?
+  remediationPlan String?
+  remediationDue  DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Assessment {
+  id                 String    @id @default(cuid())
+  reference          String    @unique
+  period             String
+  status             String    @default("DRAFT")
+  effectivenessScore Float?
+  obligationCovPct   Float?
+  policyAckPct       Float?
+  trainingPct        Float?
+  controlEffPct      Float?
+  openCriticalCount  Int       @default(0)
+  openHighCount      Int       @default(0)
+  scorePenalty       Float     @default(0)
+  cocSubmitDate      DateTime?
+  ccoReviewDate      DateTime?
+  ccoSignOffDate     DateTime?
+  signedOffBy        String?
+  notes              String?
+  genuineness        String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model Notification {
+  id         String    @id @default(cuid())
+  userId     String
+  type       String
+  title      String
+  message    String
+  severity   String    @default("INFO")
+  read       Boolean   @default(false)
+  entityType String?
+  entityId   String?
+  createdAt  DateTime  @default(now())
+
+  user     User      @relation(fields: [userId], references: [id])
+  incident Incident? @relation(fields: [entityId], references: [id])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  action     String
+  entityType String
+  entityId   String
+  prevState  String?
+  newState   String?
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  actor    User      @relation(fields: [actorId], references: [id])
+  incident Incident? @relation(fields: [entityId], references: [id])
+  gift     Gift?     @relation(fields: [entityId], references: [id])
+  coi      COI?      @relation(fields: [entityId], references: [id])
+}

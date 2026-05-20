@@ -1,0 +1,50 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --color-navy: #0F1929;
+  --color-navy-mid: #172033;
+  --color-blue: #1D5FAB;
+  --color-blue-light: #E8F2FB;
+  --color-amber: #B45309;
+  --color-amber-light: #FFFBEB;
+  --color-red: #B91C1C;
+  --color-red-light: #FEF2F2;
+  --color-green: #15803D;
+  --color-green-light: #F0FDF4;
+  --color-purple: #6D28D9;
+  --color-purple-light: #F5F3FF;
+  --color-surface: #FFFFFF;
+  --color-bg: #F1F5F9;
+  --color-border: #E2E8F0;
+  --color-text-1: #0F172A;
+  --color-text-2: #475569;
+  --color-text-3: #94A3B8;
+
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+
+:root {
+  --radius: 0.5rem;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-bg);
+  color: var(--color-text-1);
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+}
+
+code, .font-mono {
+  font-family: var(--font-mono);
+}
